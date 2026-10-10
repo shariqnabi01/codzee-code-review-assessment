@@ -4047,11 +4047,10 @@ test('extend callback can edit frozen tuple defaults without changing the parent
 });
 
 // A merged `null` for request-shaping options should fail early instead of slipping through until the request is built.
-test('`null` for merged method, prefix, baseUrl, referrer or referrerPolicy gets an error naming the option', async t => {
+test('`null` for merged method, prefix, baseUrl, referrer or referrerPolicy gets an error naming the option', t => {
 	for (const key of ['method', 'prefix', 'baseUrl', 'referrer', 'referrerPolicy'] as const) {
 		const expectation = {instanceOf: TypeError, message: `The \`${key}\` option must not be \`null\`. Use \`undefined\` to clear it.`};
 
-		// eslint-disable-next-line no-await-in-loop
 		t.throws(() => ky.create({[key]: 'https://example.com' as never}).extend({[key]: null as never}), expectation, `extend: ${key}`);
 	}
 });
