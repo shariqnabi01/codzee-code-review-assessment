@@ -368,9 +368,8 @@ const deepMergeInternal = <T>(isRoot: boolean, ...sources: Array<Partial<T> | un
 					continue;
 				}
 
-				// Option merging would otherwise let a `null` silently replace the inherited headers.
-				if (isRoot && key === 'headers' && value === null) {
-					throw new TypeError('The `headers` option must not be `null`. Use `undefined` to clear it.');
+				if (isRoot && ['headers', 'method', 'prefix', 'baseUrl', 'referrer', 'referrerPolicy'].includes(key) && value === null) {
+					throw new TypeError(`The \`${key}\` option must not be \`null\`. Use \`undefined\` to clear it.`);
 				}
 
 				// Special handling for context - shallow merge only.
