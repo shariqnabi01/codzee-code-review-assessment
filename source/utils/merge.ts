@@ -70,13 +70,20 @@ export const validateAndMerge = (...sources: Array<Partial<Options> | undefined>
 	return deepMerge({}, ...sources);
 };
 
-// `undefined` is absent. `null` is reported by the dedicated null check so its message stays. Anything else that is not an object used to reach `new Headers()`, which threw without naming the option.
+// `undefined` is absent. `null` is reported by the dedicated null check so its message stays. `isObject()` would also accept `Date`, `Map`, and other class instances, which are not valid header sources.
 export const validateHeadersOption = (value: unknown): void => {
 	if (value === undefined || value === null) {
 		return;
 	}
 
-	if (!isObject(value)) {
+	const isPlainObject = isNonArrayObject(value)
+		&& (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
+
+	if (
+		!isPlainObject
+		&& !Array.isArray(value)
+		&& !(value instanceof globalThis.Headers)
+	) {
 		throw new TypeError('The `headers` option must be an object, an array, or a Headers instance');
 	}
 };

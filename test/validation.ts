@@ -255,6 +255,18 @@ test('rejects a `headers` value that is not an object, an array, or a Headers in
 		}, `headers: ${JSON.stringify(headers)}`);
 	}
 
+	// `isObject()` accepts these, so they used to reach `new Headers()` instead of naming the option.
+	for (const headers of [new Date(), new Map()] as unknown[]) {
+		// eslint-disable-next-line no-await-in-loop
+		await t.throwsAsync(ky('https://example.com', {
+			headers: headers as never,
+			fetch: okFetch,
+		}), {
+			name: 'TypeError',
+			message: 'The `headers` option must be an object, an array, or a Headers instance',
+		});
+	}
+
 	t.throws(() => ky.create({headers: 123 as never}), {
 		instanceOf: TypeError,
 		message: 'The `headers` option must be an object, an array, or a Headers instance',
