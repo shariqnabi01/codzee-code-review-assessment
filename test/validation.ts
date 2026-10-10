@@ -244,3 +244,39 @@ test('rejects a `retry.retryOnTimeout` that is not a boolean', async t => {
 		}, `retryOnTimeout: ${JSON.stringify(retryOnTimeout)}`);
 	}
 });
+
+// A number, string, or boolean used to reach `new Headers()`, which threw a constructor error that did not name the option.
+test('rejects a `headers` value that is not an object, an array, or a Headers instance', async t => {
+	for (const headers of [123, 'x-foo: bar', true, false] as unknown[]) {
+		// eslint-disable-next-line no-await-in-loop
+		await t.throwsAsync(ky('https://example.com', {headers: headers as never, fetch: okFetch}), {
+			name: 'TypeError',
+			message: 'The `headers` option must be an object, an array, or a Headers instance',
+		}, `headers: ${JSON.stringify(headers)}`);
+	}
+
+	t.throws(() => ky.create({headers: 123 as never}), {
+		instanceOf: TypeError,
+		message: 'The `headers` option must be an object, an array, or a Headers instance',
+	});
+});
+
+test('rejects an invalid `headers` value set from an `init` hook', async t => {
+	await t.throwsAsync(ky('https://example.com', {
+		fetch: okFetch,
+		hooks: {
+			init: [options => {
+				options.headers = 123 as never;
+			}],
+		},
+	}), {
+		name: 'TypeError',
+		message: 'The `headers` option must be an object, an array, or a Headers instance',
+	});
+});
+
+test('accepts an object, an array, or a Headers instance for `headers`', async t => {
+	t.is(await ky('https://example.com', {headers: {}, fetch: okFetch}).text(), 'ok');
+	t.is(await ky('https://example.com', {headers: [['x', '1']], fetch: okFetch}).text(), 'ok');
+	t.is(await ky('https://example.com', {headers: new Headers({x: '1'}), fetch: okFetch}).text(), 'ok');
+});

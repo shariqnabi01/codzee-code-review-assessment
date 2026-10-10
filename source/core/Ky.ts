@@ -27,6 +27,7 @@ import {
 	mergeHeaders,
 	mergeHeaderContainers,
 	mergeHooks,
+	validateHeadersOption,
 	deletedParametersSymbol,
 	type MarkedSearchParameters,
 } from '../utils/merge.js';
@@ -476,6 +477,8 @@ export class Ky {
 				throw new TypeError(`The \`${key}\` option must not be \`null\`. Use \`undefined\` to clear it.`);
 			}
 		}
+
+		validateHeadersOption(options.headers);
 
 		if (options.context !== undefined && !isNonArrayObject(options.context)) {
 			throw new TypeError('The `context` option must be an object');
