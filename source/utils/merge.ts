@@ -70,6 +70,24 @@ export const validateAndMerge = (...sources: Array<Partial<Options> | undefined>
 	return deepMerge({}, ...sources);
 };
 
+// `undefined` is absent. `null` is reported by the dedicated null check so its message stays. `isObject()` would also accept `Date`, `Map`, and other class instances, which are not valid header sources.
+export const validateHeadersOption = (value: unknown): void => {
+	if (value === undefined || value === null) {
+		return;
+	}
+
+	const isPlainObject = isNonArrayObject(value)
+		&& (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
+
+	if (
+		!isPlainObject
+		&& !Array.isArray(value)
+		&& !(value instanceof globalThis.Headers)
+	) {
+		throw new TypeError('The `headers` option must be an object, an array, or a Headers instance');
+	}
+};
+
 export const mergeHeaders = (source1: KyHeadersInit = {}, source2: KyHeadersInit = {}) => {
 	// The base source is copied as-is. Only the second source carries deletion markers: `undefined` in a plain object (for example, from `init` hooks or merged options), or the string `'undefined'` in a `Headers` instance.
 	const result = new globalThis.Headers(source1 as RequestInit['headers']);
@@ -368,9 +386,13 @@ const deepMergeInternal = <T>(isRoot: boolean, ...sources: Array<Partial<T> | un
 					continue;
 				}
 
-				// Option merging would otherwise let a `null` silently replace the inherited headers.
-				if (isRoot && key === 'headers' && value === null) {
-					throw new TypeError('The `headers` option must not be `null`. Use `undefined` to clear it.');
+				// Option merging would otherwise let a `null` silently replace the inherited headers. A number or string used to be stored and then fail later in `new Headers()` without naming the option.
+				if (isRoot && key === 'headers') {
+					if (value === null) {
+						throw new TypeError('The `headers` option must not be `null`. Use `undefined` to clear it.');
+					}
+
+					validateHeadersOption(value);
 				}
 
 				// Special handling for context - shallow merge only.
