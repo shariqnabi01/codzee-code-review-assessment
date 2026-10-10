@@ -34,11 +34,6 @@ test('baseUrl option', async t => {
 		response.end('/api/v1/users');
 	});
 
-	t.is(
-		// @ts-expect-error {baseUrl: boolean} isn't officially supported
-		await ky(`${server.url}/foo/bar`, {baseUrl: false}).text(),
-		'/foo/bar',
-	);
 	t.is(await ky(`${server.url}/foo/bar`, {baseUrl: '/api'}).text(), '/foo/bar');
 	t.is(await ky(`${server.url}/foo/bar`, {baseUrl: ''}).text(), '/foo/bar');
 	t.is(await ky(new URL(`${server.url}/foo/bar`), {baseUrl: ''}).text(), '/foo/bar');

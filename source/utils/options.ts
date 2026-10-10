@@ -1,6 +1,13 @@
 import {kyOptionKeys, requestOptionsRegistry} from '../core/constants.js';
 import type {SearchParamsOption} from '../types/options.js';
+import {isNonArrayObject} from './is.js';
 import {deletedParametersSymbol, type MarkedSearchParameters} from './merge.js';
+
+const isSearchParametersValue = (value: unknown): boolean =>
+	typeof value === 'string'
+	|| Array.isArray(value)
+	|| value instanceof URLSearchParams
+	|| isNonArrayObject(value);
 
 export const findUnknownOptions = (
 	options: Record<string, unknown>,
@@ -37,6 +44,11 @@ export const hasSearchParameters = (search: SearchParamsOption): boolean => {
 	// Option merging already rejects `null`, but an `init` hook assigns straight onto the options object.
 	if (search === null) {
 		throw new TypeError('The `searchParams` option must not be `null`. Use `undefined` to clear it.');
+	}
+
+	// A number, boolean, or function used to reach `new URLSearchParams()`, which throws a constructor error that does not name the option.
+	if (!isSearchParametersValue(search)) {
+		throw new TypeError('The `searchParams` option must be a string, object, array, or URLSearchParams');
 	}
 
 	// The `typeof array` still gives "object", so we need different checking for array.

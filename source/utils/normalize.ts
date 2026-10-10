@@ -3,8 +3,14 @@ import type {RetryOptions} from '../types/retry.js';
 import type {HttpMethod, InternalOptions, RequestHttpMethod} from '../types/options.js';
 import {isNonArrayObject, isNonNegativeNumber} from './is.js';
 
-export const normalizeRequestMethod = (input: string): string =>
-	requestMethods.includes(input.toLowerCase() as RequestHttpMethod) ? input.toUpperCase() : input;
+export const normalizeRequestMethod = (input: string): string => {
+	// A non-string used to throw `input.toLowerCase is not a function`, which names Ky's internals instead of the option the caller set.
+	if (typeof input !== 'string') {
+		throw new TypeError('The `method` option must be a string');
+	}
+
+	return requestMethods.includes(input.toLowerCase() as RequestHttpMethod) ? input.toUpperCase() : input;
+};
 
 const caseInsensitiveMethods = new Set<string>([...requestMethods, 'options', 'trace']);
 

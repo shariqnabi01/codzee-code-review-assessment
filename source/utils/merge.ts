@@ -270,6 +270,30 @@ const resolveReplaceMarkers = (value: unknown, resolved: Map<unknown, unknown>):
 	return result;
 };
 
+const validateMergedRequestShapeOption = (key: string, value: unknown): void => {
+	if (['headers', 'method', 'prefix', 'baseUrl', 'referrer', 'referrerPolicy'].includes(key) && value === null) {
+		throw new TypeError(`The \`${key}\` option must not be \`null\`. Use \`undefined\` to clear it.`);
+	}
+
+	if (key === 'method' && value !== undefined && typeof value !== 'string') {
+		throw new TypeError('The `method` option must be a string');
+	}
+
+	if ((key === 'prefix' || key === 'baseUrl') && value !== undefined && typeof value !== 'string' && !(value instanceof URL)) {
+		throw new TypeError(`The \`${key}\` option must be a string or a URL`);
+	}
+};
+
+const validateMergedSearchParameters = (value: unknown): void => {
+	if (value === null) {
+		throw new TypeError('The `searchParams` option must not be `null`. Use `undefined` to clear it.');
+	}
+
+	if (value !== undefined && typeof value !== 'string' && !Array.isArray(value) && !(value instanceof URLSearchParams) && !isNonArrayObject(value)) {
+		throw new TypeError('The `searchParams` option must be a string, object, array, or URLSearchParams');
+	}
+};
+
 const appendSearchParameters = (target: any, source: any): URLSearchParams => {
 	const result: MarkedSearchParameters = new URLSearchParams();
 	// Deleted keys stay marked even when a later layer re-adds the key, so the key is still removed from the input URL before the re-added value is appended.
@@ -368,9 +392,8 @@ const deepMergeInternal = <T>(isRoot: boolean, ...sources: Array<Partial<T> | un
 					continue;
 				}
 
-				// Option merging would otherwise let a `null` silently replace the inherited headers.
-				if (isRoot && key === 'headers' && value === null) {
-					throw new TypeError('The `headers` option must not be `null`. Use `undefined` to clear it.');
+				if (isRoot) {
+					validateMergedRequestShapeOption(key, value);
 				}
 
 				// Special handling for context - shallow merge only.
@@ -398,9 +421,7 @@ const deepMergeInternal = <T>(isRoot: boolean, ...sources: Array<Partial<T> | un
 				// Scoped to the root options level so it never rewrites nested user data that
 				// happens to contain a `searchParams` key (e.g. a `json` request body).
 				if (isRoot && key === 'searchParams') {
-					if (value === null) {
-						throw new TypeError('The `searchParams` option must not be `null`. Use `undefined` to clear it.');
-					}
+					validateMergedSearchParameters(value);
 
 					if (value === undefined) {
 						// Explicit undefined removes searchParams
