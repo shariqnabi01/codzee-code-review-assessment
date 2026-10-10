@@ -4046,6 +4046,16 @@ test('extend callback can edit frozen tuple defaults without changing the parent
 	t.is(await parent('https://example.com').text(), 'https://example.com/?key=value');
 });
 
+// A merged `null` for request-shaping options should fail early instead of slipping through until the request is built.
+test('`null` for merged method, prefix, baseUrl, referrer or referrerPolicy gets an error naming the option', async t => {
+	for (const key of ['method', 'prefix', 'baseUrl', 'referrer', 'referrerPolicy'] as const) {
+		const expectation = {instanceOf: TypeError, message: `The \`${key}\` option must not be \`null\`. Use \`undefined\` to clear it.`};
+
+		// eslint-disable-next-line no-await-in-loop
+		t.throws(() => ky.create({[key]: 'https://example.com' as never}).extend({[key]: null as never}), expectation, `extend: ${key}`);
+	}
+});
+
 // Only `undefined` and `replaceOption()` remove an inherited signal. `null` is accepted for `RequestInit` compatibility and means "no signal given", so it keeps the inherited signal instead of clearing it.
 test('a null signal is treated like an absent one', async t => {
 	const controller = new AbortController();
