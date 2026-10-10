@@ -477,6 +477,14 @@ export class Ky {
 			}
 		}
 
+		// `prefix` used to be `String()`-coerced, so `false` or `{}` silently became `''` or `'[object Object]'`. `baseUrl` went to `new Request()`, which threw without naming the option.
+		for (const key of ['prefix', 'baseUrl'] as const) {
+			const value = options[key];
+			if (value !== undefined && typeof value !== 'string' && !(value instanceof URL)) {
+				throw new TypeError(`The \`${key}\` option must be a string or a URL`);
+			}
+		}
+
 		if (options.context !== undefined && !isNonArrayObject(options.context)) {
 			throw new TypeError('The `context` option must be an object');
 		}

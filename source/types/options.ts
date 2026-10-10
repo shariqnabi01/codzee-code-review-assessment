@@ -118,7 +118,7 @@ export type KyOptions = {
 	/**
 	Search parameters to include in the request URL. Setting this will merge with any existing search parameters in the input URL.
 
-	Accepts any value supported by [`URLSearchParams()`](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams/URLSearchParams).
+	Accepts a string, object, array of pairs, or `URLSearchParams`. Any other value, `null` included, throws a `TypeError`.
 
 	When passing an object, setting a value to `undefined` deletes the parameter, including from the input URL, even when a later option layer adds the parameter again. `null` values are preserved and converted to the string `'null'`.
 
@@ -127,7 +127,7 @@ export type KyOptions = {
 	searchParams?: SearchParamsOption;
 
 	/**
-	A base URL to [resolve](https://developer.mozilla.org/en-US/docs/Web/API/URL_API/Resolving_relative_references) the `input` against. When the `input` (after applying the `prefix` option) is only a relative URL, such as `'users'`, `'/users'`, or `'//my-site.com'`, it will be resolved against the `baseUrl` to determine the destination of the request. Otherwise, the `input` is absolute, such as `'https://my-site.com'`, and it will bypass the `baseUrl`.
+	A base URL to [resolve](https://developer.mozilla.org/en-US/docs/Web/API/URL_API/Resolving_relative_references) the `input` against. Must be a string or a `URL`, or a `TypeError` is thrown. When the `input` (after applying the `prefix` option) is only a relative URL, such as `'users'`, `'/users'`, or `'//my-site.com'`, it will be resolved against the `baseUrl` to determine the destination of the request. Otherwise, the `input` is absolute, such as `'https://my-site.com'`, and it will bypass the `baseUrl`.
 
 	Useful when used with [`ky.extend()`](#kyextenddefaultoptions) to create niche-specific Ky instances.
 
@@ -151,7 +151,7 @@ export type KyOptions = {
 	baseUrl?: URL | string | undefined;
 
 	/**
-	A prefix to prepend to the `input` before making the request (and before it is resolved against the `baseUrl`). It can be any valid path or URL, either relative or absolute. A trailing slash `/` is optional and will be added automatically, if needed, when it is joined with `input`. Only takes effect when `input` is a string.
+	A prefix to prepend to the `input` before making the request (and before it is resolved against the `baseUrl`). Must be a string or a `URL`, or a `TypeError` is thrown. It can be any valid path or URL, either relative or absolute. A trailing slash `/` is optional and will be added automatically, if needed, when it is joined with `input`. Only takes effect when `input` is a string.
 
 	Useful when used with [`ky.extend()`](#kyextenddefaultoptions) to create niche-specific Ky instances.
 
@@ -453,7 +453,7 @@ Options are the same as `window.fetch`, except for the KyOptions
 */
 export interface Options extends KyOptions, RequestOptions { // eslint-disable-line @typescript-eslint/consistent-type-definitions -- This must stay an interface so that it can be extended outside of Ky for use in `ky.create`.
 	/**
-	HTTP method used to make the request.
+	HTTP method used to make the request. Must be a string, or a `TypeError` is thrown.
 
 	Internally, the standard methods (`GET`, `POST`, `PUT`, `PATCH`, `HEAD`, `DELETE`, and `QUERY`) are uppercased in order to avoid server errors due to case sensitivity.
 	*/

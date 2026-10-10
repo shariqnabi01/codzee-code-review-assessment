@@ -30,11 +30,6 @@ test('prefix option', async t => {
 		response.end('/foo/bar');
 	});
 
-	t.is(
-		// @ts-expect-error {prefix: boolean} isn't officially supported
-		await ky(`${server.url}/foo/bar`, {prefix: false}).text(),
-		'/foo/bar',
-	);
 	t.is(await ky(`${server.url}/foo/bar`, {prefix: ''}).text(), '/foo/bar');
 	t.is(await ky(new URL(`${server.url}/foo/bar`), {prefix: ''}).text(), '/foo/bar');
 	t.is(await ky('foo/bar', {prefix: server.url}).text(), '/foo/bar');

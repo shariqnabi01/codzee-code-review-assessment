@@ -244,3 +244,110 @@ test('rejects a `retry.retryOnTimeout` that is not a boolean', async t => {
 		}, `retryOnTimeout: ${JSON.stringify(retryOnTimeout)}`);
 	}
 });
+
+// `normalizeRequestMethod()` called `.toLowerCase()` on whatever it was given, so a number or object surfaced as `input.toLowerCase is not a function` instead of naming `method`.
+test('rejects a non-string `method`', async t => {
+	for (const method of [123, true, {}, []] as unknown[]) {
+		// eslint-disable-next-line no-await-in-loop
+		await t.throwsAsync(ky('https://example.com', {method: method as never, fetch: okFetch}), {
+			name: 'TypeError',
+			message: 'The `method` option must be a string',
+		}, `method: ${JSON.stringify(method)}`);
+	}
+
+	t.throws(() => ky.create({method: 123 as never}), {
+		instanceOf: TypeError,
+		message: 'The `method` option must be a string',
+	});
+});
+
+test('rejects a non-string `method` set from an `init` hook', async t => {
+	await t.throwsAsync(ky('https://example.com', {
+		fetch: okFetch,
+		hooks: {
+			init: [options => {
+				options.method = 123 as never;
+			}],
+		},
+	}), {
+		name: 'TypeError',
+		message: 'The `method` option must be a string',
+	});
+});
+
+// `prefix` was `String()`-coerced, so `false` became no prefix and `{}` became `'[object Object]'`. `baseUrl` went to `new Request()`, which threw without naming the option.
+test('rejects a `prefix` or `baseUrl` that is not a string or URL', async t => {
+	for (const key of ['prefix', 'baseUrl'] as const) {
+		for (const value of [false, 123, true, {}, []] as unknown[]) {
+			// eslint-disable-next-line no-await-in-loop
+			await t.throwsAsync(ky('https://example.com', {[key]: value, fetch: okFetch} as never), {
+				name: 'TypeError',
+				message: `The \`${key}\` option must be a string or a URL`,
+			}, `${key}: ${JSON.stringify(value)}`);
+		}
+
+		t.throws(() => ky.create({[key]: false} as never), {
+			instanceOf: TypeError,
+			message: `The \`${key}\` option must be a string or a URL`,
+		}, `create: ${key}`);
+	}
+});
+
+test('rejects an invalid `prefix` set from an `init` hook', async t => {
+	await t.throwsAsync(ky('https://example.com', {
+		fetch: okFetch,
+		hooks: {
+			init: [options => {
+				options.prefix = false as never;
+			}],
+		},
+	}), {
+		name: 'TypeError',
+		message: 'The `prefix` option must be a string or a URL',
+	});
+});
+
+// A number or boolean reached `new URLSearchParams()`, which threw a constructor error that did not name `searchParams`.
+test('rejects a `searchParams` value that is not a string, object, array, or URLSearchParams', async t => {
+	for (const searchParameters of [123, true, false, () => 'q=1'] as unknown[]) {
+		// eslint-disable-next-line no-await-in-loop
+		await t.throwsAsync(ky('https://example.com', {searchParams: searchParameters as never, fetch: okFetch}), {
+			name: 'TypeError',
+			message: 'The `searchParams` option must be a string, object, array, or URLSearchParams',
+		}, `searchParams: ${String(searchParameters)}`);
+	}
+
+	t.throws(() => ky.create({searchParams: 123 as never}), {
+		instanceOf: TypeError,
+		message: 'The `searchParams` option must be a string, object, array, or URLSearchParams',
+	});
+});
+
+test('rejects an invalid `searchParams` value set from an `init` hook', async t => {
+	await t.throwsAsync(ky('https://example.com', {
+		fetch: okFetch,
+		hooks: {
+			init: [options => {
+				options.searchParams = 123 as never;
+			}],
+		},
+	}), {
+		name: 'TypeError',
+		message: 'The `searchParams` option must be a string, object, array, or URLSearchParams',
+	});
+});
+
+test('accepts a string, URL, object, array, or URLSearchParams for the newly validated options', async t => {
+	t.is(await ky('https://example.com', {
+		method: 'GET',
+		prefix: '',
+		baseUrl: '',
+		searchParams: '',
+		fetch: okFetch,
+	}).text(), 'ok');
+	t.is(await ky('https://example.com', {prefix: new URL('https://example.com/'), fetch: okFetch}).text(), 'ok');
+	t.is(await ky('https://example.com', {baseUrl: new URL('https://example.com/'), fetch: okFetch}).text(), 'ok');
+	t.is(await ky('https://example.com', {searchParams: {q: 1}, fetch: okFetch}).text(), 'ok');
+	t.is(await ky('https://example.com', {searchParams: [['q', '1']], fetch: okFetch}).text(), 'ok');
+	t.is(await ky('https://example.com', {searchParams: new URLSearchParams('q=1'), fetch: okFetch}).text(), 'ok');
+});
